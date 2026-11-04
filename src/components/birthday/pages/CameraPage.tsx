@@ -6,9 +6,9 @@ import { Camera } from "lucide-react";
 import { PageShell, TapeNote } from "./PageShell";
 
 const FILM = [
-  { src: "/images/polaroid2.png", cap: "klik! manis banget 🍦", rot: -5 },
-  { src: "/images/polaroid4.png", cap: "yang ini aesthetic ✨", rot: 4 },
-  { src: "/images/polaroid5.png", cap: "terakhir… buatku ya 🤍", rot: -2 },
+  { src: "/images/camera1.jpg", cap: "klik! manis banget 🍦", rot: -5 },
+  { src: "/images/camera2.jpg", cap: "yang ini aesthetic ✨", rot: 4 },
+  { src: "/images/camera3.jpg", cap: "terakhir… buatku ya 🤍", rot: -2 },
 ];
 
 /**
