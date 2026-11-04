@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { CoverBack, CoverFront } from "./BookCover";
 import { Fireworks } from "./Fireworks";
@@ -97,17 +97,6 @@ function useClickBlockAfterDrag() {
     return () => window.removeEventListener("click", h, true);
   }, []);
   return mark;
-}
-
-function useIsMobile() {
-  const [mobile, setMobile] = React.useState(false);
-  React.useEffect(() => {
-    const f = () => setMobile(window.innerWidth < 768);
-    f();
-    window.addEventListener("resize", f);
-    return () => window.removeEventListener("resize", f);
-  }, []);
-  return mobile;
 }
 
 /** Satu lembar dua-sisi (depan + belakang) untuk animasi flip */
@@ -305,7 +294,8 @@ function DesktopBook() {
       const vh = window.innerHeight;
       const availW = Math.min(vw - 28, 990);
       const availH = vh - 235;
-      setScale(Math.max(0.42, Math.min(1, availW / BOOK_W, availH / PAGE_H)));
+      // floor rendah agar buku 2-halaman muat di layar ponsel sempit
+      setScale(Math.max(0.25, Math.min(1, availW / BOOK_W, availH / PAGE_H)));
     };
     compute();
     window.addEventListener("resize", compute);
@@ -756,198 +746,10 @@ function DesktopBook() {
   );
 }
 
-/* ============================ MOBILE ============================ */
-
-const MOBILE_SCREENS = [
-  <EnvelopePage key="m0" />,
-  <FavoritesPage key="m1" />,
-  <CameraPage key="m2" />,
-  <SongPage key="m3" />,
-  <PhotoPage key="m4" />,
-  <NotesPage key="m5" />,
-];
-
-function MobileBook() {
-  const [step, setStep] = React.useState(-1); // -1 = sampul, 0..5 = isi, 6 = sampul akhir
-  const [dir, setDir] = React.useState(1);
-  const [celebrated, setCelebrated] = React.useState(false);
-  const [fireworks, setFireworks] = React.useState(false);
-  const [dragX, setDragX] = React.useState(0);
-  const [dragActive, setDragActive] = React.useState(false);
-  const dragXRef = React.useRef(0);
-  const press = React.useRef<{
-    startX: number;
-    pid: number;
-    active: boolean;
-  } | null>(null);
-  const fwTimer = React.useRef<number | null>(null);
-  const markDragEnd = useClickBlockAfterDrag();
-
-  React.useEffect(() => {
-    return () => {
-      if (fwTimer.current) window.clearTimeout(fwTimer.current);
-    };
-  }, []);
-
-  const lightFireworks = () => {
-    setCelebrated(true);
-    setFireworks(true);
-    if (fwTimer.current) window.clearTimeout(fwTimer.current);
-    fwTimer.current = window.setTimeout(() => setFireworks(false), 9500);
-  };
-
-  const go = (d: number) => {
-    setDir(d);
-    setStep((s) => Math.min(6, Math.max(-1, s + d)));
-  };
-
-  const restart = () => {
-    setStep(-1);
-    setCelebrated(false);
-    setFireworks(false);
-  };
-
-  const atStart = step <= -1;
-  const atEnd = step >= 6;
-
-  /* ---- geser (swipe) halaman ---- */
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (press.current) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    const startX = e.clientX;
-    const pid = e.pointerId;
-    const state = { startX, pid, active: false };
-    press.current = state;
-
-    const onMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== pid) return;
-      const dx = ev.clientX - startX;
-      if (!state.active) {
-        if (Math.abs(dx) < 12) return;
-        state.active = true;
-        setDragActive(true);
-      }
-      const resisted = (atStart && dx > 0) || (atEnd && dx < 0);
-      const next = resisted ? dx * 0.22 : dx;
-      dragXRef.current = next;
-      setDragX(next);
-    };
-
-    const finish = () => {
-      cleanup();
-      press.current = null;
-      if (!state.active) return;
-      setDragActive(false);
-      markDragEnd();
-      const dx = dragXRef.current;
-      dragXRef.current = 0;
-      setDragX(0);
-      if (dx < -70) go(1);
-      else if (dx > 70) go(-1);
-    };
-
-    const cleanup = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", finish);
-      window.removeEventListener("pointercancel", finish);
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", finish);
-    window.addEventListener("pointercancel", finish);
-  };
-
-  return (
-    <div className="flex w-full flex-col items-center">
-      <div
-        className="w-[min(92vw,400px)]"
-        style={{ perspective: 1400 }}
-        onDragStart={(e) => e.preventDefault()}
-      >
-        <div
-          className="relative select-none overflow-hidden rounded-[16px] shadow-[0_26px_60px_rgba(60,20,15,0.5)] ring-4 ring-[#4a1b26]/85"
-          style={{
-            height: "min(70vh, 640px)",
-            transformStyle: "preserve-3d",
-            transform: `translateX(${dragX}px)`,
-            transition: dragActive
-              ? "none"
-              : "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
-            touchAction: "pan-y",
-          }}
-          onPointerDown={onPointerDown}
-        >
-          <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-            <motion.div
-              key={step}
-              custom={dir}
-              initial={{ x: dir * 90, opacity: 0, rotateY: dir * 12 }}
-              animate={{ x: 0, opacity: 1, rotateY: 0 }}
-              exit={{ x: -dir * 90, opacity: 0, rotateY: -dir * 10 }}
-              transition={{ duration: 0.45, ease: EASE }}
-              className="absolute inset-0"
-              style={{ transformStyle: "preserve-3d" }}
-            >
-              {step === -1 && <CoverFront onOpen={() => go(1)} />}
-              {step >= 0 && step <= 5 && MOBILE_SCREENS[step]}
-              {step === 6 && (
-                <CoverBack
-                  onCakeClick={lightFireworks}
-                  celebrated={celebrated}
-                  onRestart={restart}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* navigasi */}
-      <div className="mt-6 flex items-center gap-5">
-        <NavButton
-          dir="left"
-          label="Halaman sebelumnya"
-          onClick={() => go(-1)}
-          disabled={step <= -1}
-        />
-        {step >= 0 && step <= 5 ? (
-          <div className="flex items-center gap-1.5" aria-label={`Halaman ${step + 1} dari 6`}>
-            {MOBILE_SCREENS.map((_, i) => (
-              <span
-                key={i}
-                className={`block rounded-full transition-all ${
-                  i === step
-                    ? "h-2.5 w-5 bg-[#c96a80]"
-                    : "h-2 w-2 bg-[#cfab8a]/60"
-                }`}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-        ) : (
-          <span className="font-script text-[16px] leading-none text-[#9a6b4d]/90">
-            {step === -1 ? "buka bukunya 🤍" : "klik kuenya 🎂"}
-          </span>
-        )}
-        <NavButton
-          dir="right"
-          label="Halaman berikutnya"
-          onClick={() => go(1)}
-          disabled={step >= 6}
-        />
-      </div>
-      <p className="mt-3 font-script text-[15px] leading-none text-[#9a6b4d]/80">
-        psst — geser halamannya juga bisa 🤍
-      </p>
-
-      <Fireworks active={fireworks} />
-    </div>
-  );
-}
-
 /* ============================ ROOT ============================ */
 
 export function BookExperience() {
-  const isMobile = useIsMobile();
-  return isMobile ? <MobileBook /> : <DesktopBook />;
+  // Animasi flip buku 3D dipakai di semua ukuran layar (desktop & ponsel).
+  // DesktopBook sudah berskala otomatis mengikuti viewport.
+  return <DesktopBook />;
 }
