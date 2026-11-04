@@ -4,10 +4,10 @@ import { Polaroid } from "../Polaroid";
 import { PageShell, TapeNote } from "./PageShell";
 
 const PHOTOS = [
-  { src: "/images/polaroid1.png", cap: "rooftop date ☕", rot: -4 },
-  { src: "/images/polaroid2.png", cap: "manis bareng 🍦", rot: 3 },
-  { src: "/images/polaroid3.png", cap: "ombak & kamu 🌊", rot: 2.5 },
-  { src: "/images/polaroid4.png", cap: "lampu kota ✨", rot: -3 },
+  { src: "/images/polaroid1.jpg", cap: "rooftop date ☕", rot: -4 },
+  { src: "/images/polaroid2.jpg", cap: "manis bareng 🍦", rot: 3 },
+  { src: "/images/polaroid3.jpg", cap: "ombak & kamu 🌊", rot: 2.5 },
+  { src: "/images/polaroid4.jpg", cap: "lampu kota ✨", rot: -3 },
 ];
 
 /**
@@ -41,7 +41,7 @@ export function FavoritesPage() {
             />
           ))}
           <Polaroid
-            src="/images/polaroid5.png"
+            src="/images/polaroid5.jpg"
             caption="rumah = kamu 🏠"
             rotate={1}
             aspect="square"
