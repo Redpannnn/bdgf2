@@ -14,7 +14,7 @@ export function PhotoPage() {
       <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center">
         <div className="relative">
           <Polaroid
-            src="/images/big-photo.png"
+            src="/images/big-photo.jpg"
             caption="kita. selalu. 🤍"
             rotate={-2.5}
             aspect="portrait"
